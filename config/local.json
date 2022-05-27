@@ -1,0 +1,37 @@
+{
+  "restHTTP": {
+    "port": 8080
+  },
+  "grpcHTTP": {
+    "port": 8081
+  },
+  "zapLogger": {
+    "level": "debug",
+    "development": true,
+    "encoding": "json",
+    "encoderConfig": {
+      "messageKey": "message",
+      "levelKey": "level",
+      "timeKey": "time",
+      "nameKey": "name",
+      "callerKey": "caller",
+      "functionKey": "function",
+      "stacktraceKey": "stacktrace",
+      "levelEncoder": "lowercase",
+      "timeEncoder": "rfc3339",
+      "durationEncoder": "string",
+      "callerEncoder": "full"
+    },
+    "outputPaths": [
+      "stdout"
+    ],
+    "errorOutputPaths": [
+      "stdout"
+    ]
+  },
+  "partyDatabase": {
+    "user": "lewis",
+    "dbName": "postgres",
+    "sslMode": "disable"
+  }
+}
