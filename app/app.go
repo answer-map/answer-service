@@ -1,74 +1,89 @@
 package app
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/answer-map/answer-service/service"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
-	"github.com/soheilhy/cmux"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
-	answer_protobuf "github.com/answer-map/answer-protobuf"
-	"github.com/answer-map/answer-service/service_server"
 )
 
 type App struct {
-	grpcAddress string
-	logger      *zap.Logger
-	grpcServer  *grpc.Server
+	address string
+	logger  *zap.Logger
+	db      *sql.DB
+	service service.AnswerService
+	router  *mux.Router
 }
 
 func NewApp(config *Config) (*App, error) {
-	var app App
-	app.grpcAddress = config.GRPCHTTP.Address()
-
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate config, error = %v", err)
 	}
+
+	var app App
+	app.address = config.HTTP.Address()
 
 	logger, err := config.ZapLogger.Build()
 	if err != nil {
 		return nil, fmt.Errorf("failed to start zap logger, error = %v", err)
 	}
-
 	app.logger = logger
 
-	// Open handle to database like normal
 	db, err := sql.Open("postgres", config.AnswerDataBase.DataSource())
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection, error = %v", err)
 	}
+	app.db = db
 
-	grpcServer := grpc.NewServer()
-	reflection.Register(grpcServer)
+	app.service = service.NewAnswerService(db)
 
-	answer_protobuf.RegisterAnswerServiceServer(grpcServer, service_server.NewAnswerServiceServer(db))
-
-	app.grpcServer = grpcServer
+	app.router = mux.NewRouter()
 
 	return &app, nil
 }
 
-func (app *App) Run() error {
-	lis, err := net.Listen("tcp", app.grpcAddress)
-	if err != nil {
-		return fmt.Errorf("failed to create listener, error = %v", err)
+func (app *App) Run() {
+	ctx, cancel := context.WithCancel(context.Background())
+	logger := app.logger
+
+	httpServer := &http.Server{
+		Addr:    app.address,
+		Handler: app.router,
 	}
 
-	mux := cmux.New(lis)
-	grpcL := mux.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
+	termChan := make(chan os.Signal)
+	signal.Notify(termChan, syscall.SIGTERM, syscall.SIGINT)
 
 	go func() {
-		sErr := mux.Serve()
-		if sErr != nil {
-			app.logger.Fatal("failed to serve cmux", zap.Error(err))
-		}
+		sigterm := <-termChan
+		logger.Info("shutdown process initiated", zap.Any("sigterm", sigterm))
+		httpServer.Shutdown(ctx)
 	}()
 
-	app.logger.With(zap.Any("address", grpcL.Addr())).Info("serving grpc")
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil {
+			if err != http.ErrServerClosed {
+				logger.Error("http server closed", zap.Error(err))
+			}
+			logger.Info("http server shut down")
+		}
 
-	return app.grpcServer.Serve(grpcL)
+		if err := app.db.Close(); err != nil {
+			logger.Error("db connection closed", zap.Error(err))
+		}
+		logger.Info("db connection shut down")
+
+		cancel()
+	}()
+
+	<-ctx.Done()
+	logger.Info("app shut down")
 }

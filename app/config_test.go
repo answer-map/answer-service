@@ -132,8 +132,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "pass",
 			config: &app.Config{
-				RESTHTTP:       &app.HTTPConfig{Port: 8080},
-				GRPCHTTP:       &app.HTTPConfig{Port: 8080},
+				HTTP:           &app.HTTPConfig{Port: 8080},
 				AnswerDataBase: &app.PostgreSQLDataBaseConfig{User: "lewis", DBName: "postgres", SSLMode: "disable"},
 				ZapLogger:      &devZapConfig,
 			},

@@ -8,26 +8,20 @@ import (
 )
 
 type Config struct {
-	RESTHTTP       *HTTPConfig               `json:"restHTTP" yaml:"restHTTP"`
-	GRPCHTTP       *HTTPConfig               `json:"grpcHTTP" yaml:"grpcHTTP"`
+	HTTP           *HTTPConfig               `json:"http" yaml:"http"`
 	AnswerDataBase *PostgreSQLDataBaseConfig `json:"answerDatabase" yaml:"answerDatabase"`
 	ZapLogger      *zap.Config               `json:"zapLogger" yaml:"zapLogger"`
 }
 
 func (config *Config) Validate() error {
 	if err := validation.ValidateStruct(config,
-		validation.Field(&config.RESTHTTP, validation.Required),
-		validation.Field(&config.GRPCHTTP, validation.Required),
+		validation.Field(&config.HTTP, validation.Required),
 		validation.Field(&config.AnswerDataBase, validation.Required),
 		validation.Field(&config.ZapLogger, validation.Required)); err != nil {
 		return fmt.Errorf("failed to find config fields, error = %v", err)
 	}
 
-	if err := config.RESTHTTP.Validate(); err != nil {
-		return fmt.Errorf("failed to validate http, error = %v", err)
-	}
-
-	if err := config.GRPCHTTP.Validate(); err != nil {
+	if err := config.HTTP.Validate(); err != nil {
 		return fmt.Errorf("failed to validate http, error = %v", err)
 	}
 

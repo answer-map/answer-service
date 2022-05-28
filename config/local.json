@@ -1,9 +1,6 @@
 {
-  "restHTTP": {
+  "http": {
     "port": 8080
-  },
-  "grpcHTTP": {
-    "port": 8081
   },
   "zapLogger": {
     "level": "debug",
