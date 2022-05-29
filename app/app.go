@@ -85,6 +85,7 @@ func (app *App) Run() {
 		cancel()
 	}()
 
+	logger.Info("app started")
 	<-ctx.Done()
 	logger.Info("app shut down")
 }

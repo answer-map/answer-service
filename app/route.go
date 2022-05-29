@@ -3,14 +3,18 @@ package app
 import "net/http"
 
 const (
-	basePath   = "/api/v1"
-	answerPath = "/answers"
+	basePath        = "/api/v1"
+	answerPath      = basePath + "/answers"
+	answerKeyPath   = answerPath + "/{answerKey}"
+	answerEventPath = basePath + "/answerEvents"
 )
 
 func (app *App) registerRoutes() {
-	apiRouter := app.router.Path(basePath + answerPath).Subrouter()
+	app.router.HandleFunc(answerPath, app.createAnswer).Methods(http.MethodPost)
+	app.router.HandleFunc(answerPath, app.updateAnswer).Methods(http.MethodPut)
 
-	apiRouter.Methods(http.MethodPost).HandlerFunc(app.createAnswer)
+	app.router.HandleFunc(answerKeyPath, app.deleteAnswer).Methods(http.MethodDelete)
+	app.router.HandleFunc(answerKeyPath, app.getAnswer).Methods(http.MethodGet)
 
-	apiRouter.Methods(http.MethodPut).HandlerFunc(app.updateAnswer)
+	app.router.HandleFunc(answerEventPath, app.getAnswerEvents).Methods(http.MethodGet)
 }
