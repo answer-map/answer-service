@@ -15,7 +15,7 @@ type DeleteRequest = AnswerMapKey
 type GetRequest = AnswerMapKey
 
 // GetResponse represents the response from the get operation.
-type GetResponse AnswerMap
+type GetResponse = AnswerMap
 
 // GetHistoryRequest represents the params required to perform the get history operation.
 type GetHistoryRequest struct {
@@ -24,4 +24,4 @@ type GetHistoryRequest struct {
 }
 
 // GetHistoryResponse represents the response from the get history operation.
-type GetHistoryResponse []AnswerEvent
+type GetHistoryResponse = []AnswerEvent

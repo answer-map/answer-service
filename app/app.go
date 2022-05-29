@@ -46,6 +46,7 @@ func NewApp(config *Config) (*App, error) {
 	app.service = service.NewAnswerService(db)
 
 	app.router = mux.NewRouter()
+	app.registerRoutes()
 
 	return &app, nil
 }
