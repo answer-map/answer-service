@@ -19,8 +19,8 @@ const (
 	sqlCountAnswersWithKey string = `SELECT COUNT(*) FROM "answer_map" WHERE ("answer_map"."answer_key" = $1) AND ("answer_map"."answer_value" is not null) LIMIT 1;`
 	argCount               string = "count"
 	argAnswerValue         string = "answer_value"
-	sqlInsertAnswerMap     string = `INSERT INTO "answer_map" ("answer_key","answer_value") VALUES ($1,$2)`
 	sqlUpdateAnswerMap     string = `UPDATE "answer_map" SET "answer_value"=$1 WHERE "answer_key"=$2`
+	sqlUpsertAnswerMap     string = `INSERT INTO "answer_map" ("answer_key", "answer_value") VALUES ($1,$2) ON CONFLICT ("answer_key") DO UPDATE SET "answer_value" = EXCLUDED."answer_value"`
 	sqlInsertAnswerEvent   string = `INSERT INTO "answer_event" ("event_id","event_type","event_timestamp","answer_key","answer_value") VALUES ($1,$2,$3,$4,$5)`
 	sqlInsertAnswerEvent2  string = `INSERT INTO "answer_event" ("event_id","event_type","event_timestamp","answer_key") VALUES ($1,$2,$3,$4) RETURNING "answer_value"`
 	sqlSelectAnswerMap     string = `SELECT "answer_map".* FROM "answer_map" WHERE ("answer_map"."answer_key" = $1) AND ("answer_map"."answer_value" is not null) LIMIT 1;`
@@ -89,7 +89,7 @@ func Test_answerService_Create(t *testing.T) {
 			expectations: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 				mock.ExpectQuery(regexp.QuoteMeta(sqlCountAnswersWithKey)).WithArgs(answerMap3.AnswerKey).WillReturnRows(sqlmock.NewRows([]string{argCount}).AddRow(0))
-				mock.ExpectExec(regexp.QuoteMeta(sqlInsertAnswerMap)).WithArgs(answerMap3.AnswerKey, answerMap3.AnswerValue).WillReturnResult(sqlmock.NewResult(0, 1))
+				mock.ExpectExec(regexp.QuoteMeta(sqlUpsertAnswerMap)).WithArgs(answerMap3.AnswerKey, answerMap3.AnswerValue).WillReturnResult(sqlmock.NewResult(0, 1))
 				mock.ExpectExec(regexp.QuoteMeta(sqlInsertAnswerEvent)).WithArgs(sqlmock.AnyArg(), entity.EventTypeCreate, sqlmock.AnyArg(), answerMap3.AnswerKey, answerMap3.AnswerValue).WillReturnResult(sqlmock.NewResult(0, 1))
 				mock.ExpectCommit()
 			},

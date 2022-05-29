@@ -63,7 +63,7 @@ func (s *answerService) Create(ctx context.Context, req *model.CreateRequest) er
 		AnswerValue: null.StringFrom(req.AnswerValue),
 	}
 
-	if err := answerMap.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err := answerMap.Upsert(ctx, tx, true, []string{entity.AnswerMapColumns.AnswerKey}, boil.Infer(), boil.Infer()); err != nil {
 		tx.Rollback()
 
 		return err
@@ -83,7 +83,7 @@ func (s *answerService) Create(ctx context.Context, req *model.CreateRequest) er
 		return err
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 func (s *answerService) Update(ctx context.Context, req *model.UpdateRequest) error {
@@ -132,7 +132,7 @@ func (s *answerService) Update(ctx context.Context, req *model.UpdateRequest) er
 		return err
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 func (s *answerService) Delete(ctx context.Context, req *model.DeleteRequest) error {
@@ -181,7 +181,7 @@ func (s *answerService) Delete(ctx context.Context, req *model.DeleteRequest) er
 		return err
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 func (s *answerService) Get(ctx context.Context, req *model.GetRequest) (*model.GetResponse, error) {

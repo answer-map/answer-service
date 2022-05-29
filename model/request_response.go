@@ -1,6 +1,11 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+	"time"
+)
 
 // CreateRequest represents the params required to perform the create operation.
 type CreateRequest = AnswerMap
@@ -21,6 +26,27 @@ type GetResponse = AnswerMap
 type GetHistoryRequest struct {
 	MinimumEventTimestamp time.Time `json:"minimumEventTimestamp"`
 	PageSize              uint32    `json:"pageSize"`
+}
+
+func NewGetHistoryRequest(query url.Values) (*GetHistoryRequest, error) {
+	minimumEventTimestampQP := query.Get("minimumEventTimestamp")
+	pageSizeQP := query.Get("pageSize")
+
+	if len(minimumEventTimestampQP) == 0 || len(pageSizeQP) == 0 {
+		return nil, fmt.Errorf("missing required query params")
+	}
+
+	minimumEventTimestamp, err := time.Parse(time.RFC3339, minimumEventTimestampQP)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse minimumEventTimestamp")
+	}
+
+	pageSize64, err := strconv.ParseUint(pageSizeQP, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse pageSize")
+	}
+
+	return &GetHistoryRequest{MinimumEventTimestamp: minimumEventTimestamp, PageSize: uint32(pageSize64)}, nil
 }
 
 // GetHistoryResponse represents the response from the get history operation.

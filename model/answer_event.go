@@ -8,11 +8,11 @@ import (
 )
 
 type AnswerEvent struct {
-	EventID        string      `json:"event_id"`
-	EventType      string      `json:"event_type"`
-	EventTimestamp time.Time   `json:"event_timestamp"`
-	AnswerKey      string      `json:"answer_key"`
-	AnswerValue    null.String `json:"answer_value,omitempty"`
+	EventID        string      `json:"eventID"`
+	EventType      string      `json:"eventType"`
+	EventTimestamp time.Time   `json:"eventTimestamp"`
+	AnswerKey      string      `json:"answerKey"`
+	AnswerValue    null.String `json:"answerValue,omitempty"`
 }
 
 func FromEntity(e *entity.AnswerEvent) AnswerEvent {
