@@ -1,0 +1,10 @@
+pkgname   = "entity"
+output    = "entity"
+
+[psql]
+  dbname  = "postgres"
+  host    = "localhost"
+  port    = 5432
+  user    = "lewis"
+  schema  = "public"
+  sslmode = "disable"

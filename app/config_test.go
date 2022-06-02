@@ -20,9 +20,11 @@ func TestPostgreSQLDataBaseConfig_Validate(t *testing.T) {
 		{
 			name: "pass",
 			dbConfig: &app.PostgreSQLDataBaseConfig{
-				User:    "lewis",
-				DBName:  "postgres",
-				SSLMode: "disable",
+				Port:     uint64(5432),
+				User:     "lewis",
+				Password: "open5esame",
+				DBName:   "postgres",
+				SSLMode:  "disable",
 			},
 			wantErr: false,
 		},
@@ -54,11 +56,13 @@ func TestPostgreSQLDataBaseConfig_DataSource(t *testing.T) {
 		{
 			name: "pass",
 			dbConfig: &app.PostgreSQLDataBaseConfig{
-				User:    "lewis",
-				DBName:  "postgres",
-				SSLMode: "disable",
+				Port:     uint64(5432),
+				User:     "lewis",
+				Password: "open5esame",
+				DBName:   "postgres",
+				SSLMode:  "disable",
 			},
-			want: "user=lewis dbname=postgres sslmode=disable",
+			want: "port=5432 user=lewis password=open5esame dbname=postgres sslmode=disable",
 		},
 	}
 	for _, tt := range tests {
@@ -133,7 +137,7 @@ func TestConfig_Validate(t *testing.T) {
 			name: "pass",
 			config: &app.Config{
 				HTTP:           &app.HTTPConfig{Port: 8080},
-				AnswerDataBase: &app.PostgreSQLDataBaseConfig{User: "lewis", DBName: "postgres", SSLMode: "disable"},
+				AnswerDataBase: &app.PostgreSQLDataBaseConfig{Port: uint64(5432), User: "lewis", Password: "open5esame", DBName: "postgres", SSLMode: "disable"},
 				ZapLogger:      &devZapConfig,
 			},
 			wantErr: false,

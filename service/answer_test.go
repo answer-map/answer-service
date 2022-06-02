@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/answer-map/answer-repository/entity"
+	"github.com/answer-map/answer-service/entity"
 	"github.com/answer-map/answer-service/model"
 	"github.com/answer-map/answer-service/service"
 	"github.com/google/uuid"

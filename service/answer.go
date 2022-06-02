@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/answer-map/answer-repository/entity"
+	"github.com/answer-map/answer-service/entity"
 	"github.com/answer-map/answer-service/model"
 	"github.com/google/uuid"
 	"github.com/volatiletech/null/v8"

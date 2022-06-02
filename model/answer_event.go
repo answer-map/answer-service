@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/answer-map/answer-repository/entity"
+	"github.com/answer-map/answer-service/entity"
 	"github.com/volatiletech/null/v8"
 )
 

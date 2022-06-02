@@ -11,7 +11,7 @@ import (
 
 	"context"
 
-	"github.com/answer-map/answer-repository/entity"
+	"github.com/answer-map/answer-service/entity"
 	"github.com/answer-map/answer-service/mock_service"
 	"github.com/answer-map/answer-service/model"
 	"github.com/answer-map/answer-service/service"
