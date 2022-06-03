@@ -18,6 +18,7 @@ services:
       LOGGER_STDERR_PATH: "stdout"
       DATABASE_USER: "user1"
       DATABASE_PASSWORD: "pass1"
+      DATABASE_HOST: "answer-database"
       DATABASE_PORT: 5432
       DATABASE_NAME: "postgres"
       DATABASE_SSL_MODE: "disable"

@@ -66,6 +66,7 @@ func ConfigFromEnvironmentVariables() (*Config, error) {
 		},
 		ZapLogger: &zapLoggerConfig,
 		AnswerDataBase: &PostgreSQLDataBaseConfig{
+			Host:     os.Getenv("DATABASE_HOST"),
 			Port:     dbPort,
 			User:     os.Getenv("DATABASE_USER"),
 			Password: os.Getenv("DATABASE_PASSWORD"),
@@ -119,6 +120,7 @@ func (httpConfig *HTTPConfig) Address() string {
 }
 
 type PostgreSQLDataBaseConfig struct {
+	Host     string `json:"host" yaml:"host"`
 	Port     uint64 `json:"port" yaml:"port"`
 	User     string `json:"user" yaml:"user"`
 	Password string `json:"password" yaml:"password"`
@@ -128,6 +130,7 @@ type PostgreSQLDataBaseConfig struct {
 
 func (dbConfig *PostgreSQLDataBaseConfig) Validate() error {
 	if err := validation.ValidateStruct(dbConfig,
+		validation.Field(&dbConfig.Host, validation.Required),
 		validation.Field(&dbConfig.Port, validation.Required, validation.Min(uint64(1024))),
 		validation.Field(&dbConfig.User, validation.Required),
 		validation.Field(&dbConfig.Password, validation.Required),
@@ -140,5 +143,5 @@ func (dbConfig *PostgreSQLDataBaseConfig) Validate() error {
 }
 
 func (dbConfig *PostgreSQLDataBaseConfig) DataSource() string {
-	return fmt.Sprintf("port=%d user=%s password=%s dbname=%s sslmode=%s", dbConfig.Port, dbConfig.User, dbConfig.Password, dbConfig.DBName, dbConfig.SSLMode)
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s", dbConfig.Host, dbConfig.Port, dbConfig.User, dbConfig.Password, dbConfig.DBName, dbConfig.SSLMode)
 }

@@ -9,6 +9,14 @@ import (
 
 var (
 	devZapConfig = zap.NewDevelopmentConfig()
+	dbConfig1    = &app.PostgreSQLDataBaseConfig{
+		Host:     "::1",
+		Port:     uint64(5432),
+		User:     "lewis",
+		Password: "open5esame",
+		DBName:   "postgres",
+		SSLMode:  "disable",
+	}
 )
 
 func TestPostgreSQLDataBaseConfig_Validate(t *testing.T) {
@@ -18,15 +26,9 @@ func TestPostgreSQLDataBaseConfig_Validate(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name: "pass",
-			dbConfig: &app.PostgreSQLDataBaseConfig{
-				Port:     uint64(5432),
-				User:     "lewis",
-				Password: "open5esame",
-				DBName:   "postgres",
-				SSLMode:  "disable",
-			},
-			wantErr: false,
+			name:     "pass",
+			dbConfig: dbConfig1,
+			wantErr:  false,
 		},
 		{
 			name: "invalid user",
@@ -54,15 +56,9 @@ func TestPostgreSQLDataBaseConfig_DataSource(t *testing.T) {
 		want     string
 	}{
 		{
-			name: "pass",
-			dbConfig: &app.PostgreSQLDataBaseConfig{
-				Port:     uint64(5432),
-				User:     "lewis",
-				Password: "open5esame",
-				DBName:   "postgres",
-				SSLMode:  "disable",
-			},
-			want: "port=5432 user=lewis password=open5esame dbname=postgres sslmode=disable",
+			name:     "pass",
+			dbConfig: dbConfig1,
+			want:     "host=::1 port=5432 user=lewis password=open5esame dbname=postgres sslmode=disable",
 		},
 	}
 	for _, tt := range tests {
@@ -137,7 +133,7 @@ func TestConfig_Validate(t *testing.T) {
 			name: "pass",
 			config: &app.Config{
 				HTTP:           &app.HTTPConfig{Port: 8080},
-				AnswerDataBase: &app.PostgreSQLDataBaseConfig{Port: uint64(5432), User: "lewis", Password: "open5esame", DBName: "postgres", SSLMode: "disable"},
+				AnswerDataBase: dbConfig1,
 				ZapLogger:      &devZapConfig,
 			},
 			wantErr: false,
