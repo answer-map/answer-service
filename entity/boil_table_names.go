@@ -6,7 +6,9 @@ package entity
 var TableNames = struct {
 	AnswerEvent string
 	AnswerMap   string
+	AnswerUser  string
 }{
 	AnswerEvent: "answer_event",
 	AnswerMap:   "answer_map",
+	AnswerUser:  "answer_user",
 }

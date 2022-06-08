@@ -27,7 +27,7 @@ type AnswerEvent struct {
 	EventID        string      `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
 	EventType      string      `boil:"event_type" json:"event_type" toml:"event_type" yaml:"event_type"`
 	EventTimestamp time.Time   `boil:"event_timestamp" json:"event_timestamp" toml:"event_timestamp" yaml:"event_timestamp"`
-	AnswerKey      string      `boil:"answer_key" json:"answer_key" toml:"answer_key" yaml:"answer_key"`
+	MapID          string      `boil:"map_id" json:"map_id" toml:"map_id" yaml:"map_id"`
 	AnswerValue    null.String `boil:"answer_value" json:"answer_value,omitempty" toml:"answer_value" yaml:"answer_value,omitempty"`
 
 	R *answerEventR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -38,13 +38,13 @@ var AnswerEventColumns = struct {
 	EventID        string
 	EventType      string
 	EventTimestamp string
-	AnswerKey      string
+	MapID          string
 	AnswerValue    string
 }{
 	EventID:        "event_id",
 	EventType:      "event_type",
 	EventTimestamp: "event_timestamp",
-	AnswerKey:      "answer_key",
+	MapID:          "map_id",
 	AnswerValue:    "answer_value",
 }
 
@@ -52,13 +52,13 @@ var AnswerEventTableColumns = struct {
 	EventID        string
 	EventType      string
 	EventTimestamp string
-	AnswerKey      string
+	MapID          string
 	AnswerValue    string
 }{
 	EventID:        "answer_event.event_id",
 	EventType:      "answer_event.event_type",
 	EventTimestamp: "answer_event.event_timestamp",
-	AnswerKey:      "answer_event.answer_key",
+	MapID:          "answer_event.map_id",
 	AnswerValue:    "answer_event.answer_value",
 }
 
@@ -136,26 +136,26 @@ var AnswerEventWhere = struct {
 	EventID        whereHelperstring
 	EventType      whereHelperstring
 	EventTimestamp whereHelpertime_Time
-	AnswerKey      whereHelperstring
+	MapID          whereHelperstring
 	AnswerValue    whereHelpernull_String
 }{
 	EventID:        whereHelperstring{field: "\"answer_event\".\"event_id\""},
 	EventType:      whereHelperstring{field: "\"answer_event\".\"event_type\""},
 	EventTimestamp: whereHelpertime_Time{field: "\"answer_event\".\"event_timestamp\""},
-	AnswerKey:      whereHelperstring{field: "\"answer_event\".\"answer_key\""},
+	MapID:          whereHelperstring{field: "\"answer_event\".\"map_id\""},
 	AnswerValue:    whereHelpernull_String{field: "\"answer_event\".\"answer_value\""},
 }
 
 // AnswerEventRels is where relationship names are stored.
 var AnswerEventRels = struct {
-	AnswerKeyAnswerMap string
+	Map string
 }{
-	AnswerKeyAnswerMap: "AnswerKeyAnswerMap",
+	Map: "Map",
 }
 
 // answerEventR is where relationships are stored.
 type answerEventR struct {
-	AnswerKeyAnswerMap *AnswerMap `boil:"AnswerKeyAnswerMap" json:"AnswerKeyAnswerMap" toml:"AnswerKeyAnswerMap" yaml:"AnswerKeyAnswerMap"`
+	Map *AnswerMap `boil:"Map" json:"Map" toml:"Map" yaml:"Map"`
 }
 
 // NewStruct creates a new relationship struct
@@ -167,8 +167,8 @@ func (*answerEventR) NewStruct() *answerEventR {
 type answerEventL struct{}
 
 var (
-	answerEventAllColumns            = []string{"event_id", "event_type", "event_timestamp", "answer_key", "answer_value"}
-	answerEventColumnsWithoutDefault = []string{"event_id", "event_type", "event_timestamp", "answer_key"}
+	answerEventAllColumns            = []string{"event_id", "event_type", "event_timestamp", "map_id", "answer_value"}
+	answerEventColumnsWithoutDefault = []string{"event_id", "event_type", "event_timestamp", "map_id"}
 	answerEventColumnsWithDefault    = []string{"answer_value"}
 	answerEventPrimaryKeyColumns     = []string{"event_id"}
 	answerEventGeneratedColumns      = []string{}
@@ -452,10 +452,10 @@ func (q answerEventQuery) Exists(ctx context.Context, exec boil.ContextExecutor)
 	return count > 0, nil
 }
 
-// AnswerKeyAnswerMap pointed to by the foreign key.
-func (o *AnswerEvent) AnswerKeyAnswerMap(mods ...qm.QueryMod) answerMapQuery {
+// Map pointed to by the foreign key.
+func (o *AnswerEvent) Map(mods ...qm.QueryMod) answerMapQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"answer_key\" = ?", o.AnswerKey),
+		qm.Where("\"map_id\" = ?", o.MapID),
 	}
 
 	queryMods = append(queryMods, mods...)
@@ -463,9 +463,9 @@ func (o *AnswerEvent) AnswerKeyAnswerMap(mods ...qm.QueryMod) answerMapQuery {
 	return AnswerMaps(queryMods...)
 }
 
-// LoadAnswerKeyAnswerMap allows an eager lookup of values, cached into the
+// LoadMap allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (answerEventL) LoadAnswerKeyAnswerMap(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAnswerEvent interface{}, mods queries.Applicator) error {
+func (answerEventL) LoadMap(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAnswerEvent interface{}, mods queries.Applicator) error {
 	var slice []*AnswerEvent
 	var object *AnswerEvent
 
@@ -480,7 +480,7 @@ func (answerEventL) LoadAnswerKeyAnswerMap(ctx context.Context, e boil.ContextEx
 		if object.R == nil {
 			object.R = &answerEventR{}
 		}
-		args = append(args, object.AnswerKey)
+		args = append(args, object.MapID)
 
 	} else {
 	Outer:
@@ -490,12 +490,12 @@ func (answerEventL) LoadAnswerKeyAnswerMap(ctx context.Context, e boil.ContextEx
 			}
 
 			for _, a := range args {
-				if a == obj.AnswerKey {
+				if a == obj.MapID {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.AnswerKey)
+			args = append(args, obj.MapID)
 
 		}
 	}
@@ -506,7 +506,7 @@ func (answerEventL) LoadAnswerKeyAnswerMap(ctx context.Context, e boil.ContextEx
 
 	query := NewQuery(
 		qm.From(`answer_map`),
-		qm.WhereIn(`answer_map.answer_key in ?`, args...),
+		qm.WhereIn(`answer_map.map_id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -543,22 +543,22 @@ func (answerEventL) LoadAnswerKeyAnswerMap(ctx context.Context, e boil.ContextEx
 
 	if singular {
 		foreign := resultSlice[0]
-		object.R.AnswerKeyAnswerMap = foreign
+		object.R.Map = foreign
 		if foreign.R == nil {
 			foreign.R = &answerMapR{}
 		}
-		foreign.R.AnswerKeyAnswerEvents = append(foreign.R.AnswerKeyAnswerEvents, object)
+		foreign.R.MapAnswerEvents = append(foreign.R.MapAnswerEvents, object)
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.AnswerKey == foreign.AnswerKey {
-				local.R.AnswerKeyAnswerMap = foreign
+			if local.MapID == foreign.MapID {
+				local.R.Map = foreign
 				if foreign.R == nil {
 					foreign.R = &answerMapR{}
 				}
-				foreign.R.AnswerKeyAnswerEvents = append(foreign.R.AnswerKeyAnswerEvents, local)
+				foreign.R.MapAnswerEvents = append(foreign.R.MapAnswerEvents, local)
 				break
 			}
 		}
@@ -567,10 +567,10 @@ func (answerEventL) LoadAnswerKeyAnswerMap(ctx context.Context, e boil.ContextEx
 	return nil
 }
 
-// SetAnswerKeyAnswerMap of the answerEvent to the related item.
-// Sets o.R.AnswerKeyAnswerMap to related.
-// Adds o to related.R.AnswerKeyAnswerEvents.
-func (o *AnswerEvent) SetAnswerKeyAnswerMap(ctx context.Context, exec boil.ContextExecutor, insert bool, related *AnswerMap) error {
+// SetMap of the answerEvent to the related item.
+// Sets o.R.Map to related.
+// Adds o to related.R.MapAnswerEvents.
+func (o *AnswerEvent) SetMap(ctx context.Context, exec boil.ContextExecutor, insert bool, related *AnswerMap) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -580,10 +580,10 @@ func (o *AnswerEvent) SetAnswerKeyAnswerMap(ctx context.Context, exec boil.Conte
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE \"answer_event\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"answer_key"}),
+		strmangle.SetParamNames("\"", "\"", 1, []string{"map_id"}),
 		strmangle.WhereClause("\"", "\"", 2, answerEventPrimaryKeyColumns),
 	)
-	values := []interface{}{related.AnswerKey, o.EventID}
+	values := []interface{}{related.MapID, o.EventID}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -594,21 +594,21 @@ func (o *AnswerEvent) SetAnswerKeyAnswerMap(ctx context.Context, exec boil.Conte
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.AnswerKey = related.AnswerKey
+	o.MapID = related.MapID
 	if o.R == nil {
 		o.R = &answerEventR{
-			AnswerKeyAnswerMap: related,
+			Map: related,
 		}
 	} else {
-		o.R.AnswerKeyAnswerMap = related
+		o.R.Map = related
 	}
 
 	if related.R == nil {
 		related.R = &answerMapR{
-			AnswerKeyAnswerEvents: AnswerEventSlice{o},
+			MapAnswerEvents: AnswerEventSlice{o},
 		}
 	} else {
-		related.R.AnswerKeyAnswerEvents = append(related.R.AnswerKeyAnswerEvents, o)
+		related.R.MapAnswerEvents = append(related.R.MapAnswerEvents, o)
 	}
 
 	return nil

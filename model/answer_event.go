@@ -11,7 +11,7 @@ type AnswerEvent struct {
 	EventID        string      `json:"eventID"`
 	EventType      string      `json:"eventType"`
 	EventTimestamp time.Time   `json:"eventTimestamp"`
-	AnswerKey      string      `json:"answerKey"`
+	MapID          string      `json:"mapID"`
 	AnswerValue    null.String `json:"answerValue,omitempty"`
 }
 
@@ -20,7 +20,7 @@ func FromEntity(e *entity.AnswerEvent) AnswerEvent {
 		EventID:        e.EventID,
 		EventType:      e.EventType,
 		EventTimestamp: e.EventTimestamp,
-		AnswerKey:      e.AnswerKey,
+		MapID:          e.MapID,
 		AnswerValue:    e.AnswerValue,
 	}
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/answer-map/answer-service/entity"
 	"github.com/answer-map/answer-service/model"
+	"github.com/friendsofgo/errors"
 	"github.com/google/uuid"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -20,6 +21,7 @@ var (
 )
 
 type AnswerService interface {
+	CreateUser(ctx context.Context, req *model.CreateUserRequest) error
 	Create(ctx context.Context, req *model.CreateRequest) error
 	Update(ctx context.Context, req *model.UpdateRequest) error
 	Delete(ctx context.Context, req *model.DeleteRequest) error
@@ -37,7 +39,7 @@ func NewAnswerService(db *sql.DB) *answerService {
 	}
 }
 
-func (s *answerService) Create(ctx context.Context, req *model.CreateRequest) error {
+func (s *answerService) CreateUser(ctx context.Context, req *model.CreateUserRequest) error {
 	if err := req.Validate(); err != nil {
 		return ErrBadRequest
 	}
@@ -47,7 +49,7 @@ func (s *answerService) Create(ctx context.Context, req *model.CreateRequest) er
 		return err
 	}
 
-	exists, err := entity.AnswerMaps(entity.AnswerMapWhere.AnswerKey.EQ(req.AnswerKey), entity.AnswerMapWhere.AnswerValue.IsNotNull()).Exists(ctx, tx)
+	exists, err := entity.AnswerUsers(entity.AnswerUserWhere.UserID.EQ(req.UserID)).Exists(ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -58,22 +60,71 @@ func (s *answerService) Create(ctx context.Context, req *model.CreateRequest) er
 		return ErrConflict
 	}
 
-	answerMap := entity.AnswerMap{
-		AnswerKey:   req.AnswerKey,
-		AnswerValue: null.StringFrom(req.AnswerValue),
-	}
+	answerUser := entity.AnswerUser{UserID: req.UserID}
 
-	if err := answerMap.Upsert(ctx, tx, true, []string{entity.AnswerMapColumns.AnswerKey}, boil.Infer(), boil.Infer()); err != nil {
+	if err := answerUser.Insert(ctx, tx, boil.Infer()); err != nil {
 		tx.Rollback()
 
 		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s *answerService) Create(ctx context.Context, req *model.CreateRequest) error {
+	if err := req.Validate(); err != nil {
+		return ErrBadRequest
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	exists, err := entity.AnswerMaps(entity.AnswerMapWhere.UserID.EQ(req.UserID), entity.AnswerMapWhere.AnswerKey.EQ(req.AnswerKey), entity.AnswerMapWhere.AnswerValue.IsNotNull()).Exists(ctx, tx)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		tx.Rollback()
+
+		return ErrConflict
+	}
+
+	answerMap, err := entity.AnswerMaps(entity.AnswerMapWhere.UserID.EQ(req.UserID), entity.AnswerMapWhere.AnswerKey.EQ(req.AnswerKey), entity.AnswerMapWhere.AnswerValue.IsNull()).One(ctx, tx)
+	if err == nil {
+		if _, err := answerMap.Update(ctx, tx, boil.Whitelist(entity.AnswerMapColumns.AnswerValue)); err != nil {
+			tx.Rollback()
+
+			return err
+		}
+	} else {
+		if !errors.Is(err, sql.ErrNoRows) {
+			tx.Rollback()
+
+			return err
+		}
+
+		answerMap = &entity.AnswerMap{
+			MapID:       uuid.NewString(),
+			UserID:      req.UserID,
+			AnswerKey:   req.AnswerKey,
+			AnswerValue: null.StringFrom(req.AnswerValue),
+		}
+
+		if err := answerMap.Insert(ctx, tx, boil.Infer()); err != nil {
+			tx.Rollback()
+
+			return err
+		}
 	}
 
 	answerEvent := entity.AnswerEvent{
 		EventID:        uuid.NewString(),
 		EventType:      entity.EventTypeCreate,
 		EventTimestamp: time.Now(),
-		AnswerKey:      req.AnswerKey,
+		MapID:          answerMap.MapID,
 		AnswerValue:    null.StringFrom(req.AnswerValue),
 	}
 
@@ -96,23 +147,20 @@ func (s *answerService) Update(ctx context.Context, req *model.UpdateRequest) er
 		return err
 	}
 
-	exists, err := entity.AnswerMaps(entity.AnswerMapWhere.AnswerKey.EQ(req.AnswerKey), entity.AnswerMapWhere.AnswerValue.IsNotNull()).Exists(ctx, tx)
+	answerMap, err := entity.AnswerMaps(entity.AnswerMapWhere.UserID.EQ(req.UserID), entity.AnswerMapWhere.AnswerKey.EQ(req.AnswerKey), entity.AnswerMapWhere.AnswerValue.IsNotNull()).One(ctx, tx)
 	if err != nil {
+		tx.Rollback()
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrConflict
+		}
+
 		return err
 	}
 
-	if !exists {
-		tx.Rollback()
+	answerMap.AnswerValue = null.StringFrom(req.AnswerValue)
 
-		return ErrConflict
-	}
-
-	answerMap := entity.AnswerMap{
-		AnswerKey:   req.AnswerKey,
-		AnswerValue: null.StringFrom(req.AnswerValue),
-	}
-
-	if _, err = answerMap.Update(ctx, tx, boil.Infer()); err != nil {
+	if _, err = answerMap.Update(ctx, tx, boil.Whitelist(entity.AnswerMapColumns.AnswerValue)); err != nil {
 		tx.Rollback()
 
 		return err
@@ -122,7 +170,7 @@ func (s *answerService) Update(ctx context.Context, req *model.UpdateRequest) er
 		EventID:        uuid.NewString(),
 		EventType:      entity.EventTypeUpdate,
 		EventTimestamp: time.Now(),
-		AnswerKey:      req.AnswerKey,
+		MapID:          answerMap.MapID,
 		AnswerValue:    null.StringFrom(req.AnswerValue),
 	}
 
@@ -145,23 +193,20 @@ func (s *answerService) Delete(ctx context.Context, req *model.DeleteRequest) er
 		return err
 	}
 
-	exists, err := entity.AnswerMaps(entity.AnswerMapWhere.AnswerKey.EQ(req.AnswerKey), entity.AnswerMapWhere.AnswerValue.IsNotNull()).Exists(ctx, tx)
+	answerMap, err := entity.AnswerMaps(entity.AnswerMapWhere.UserID.EQ(req.UserID), entity.AnswerMapWhere.AnswerKey.EQ(req.AnswerKey), entity.AnswerMapWhere.AnswerValue.IsNotNull()).One(ctx, tx)
 	if err != nil {
+		tx.Rollback()
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrConflict
+		}
+
 		return err
 	}
 
-	if !exists {
-		tx.Rollback()
+	answerMap.AnswerValue = nullString
 
-		return ErrConflict
-	}
-
-	answerMap := entity.AnswerMap{
-		AnswerKey:   req.AnswerKey,
-		AnswerValue: nullString,
-	}
-
-	if _, err = answerMap.Update(ctx, tx, boil.Infer()); err != nil {
+	if _, err = answerMap.Update(ctx, tx, boil.Whitelist(entity.AnswerMapColumns.AnswerValue)); err != nil {
 		tx.Rollback()
 
 		return err
@@ -171,7 +216,7 @@ func (s *answerService) Delete(ctx context.Context, req *model.DeleteRequest) er
 		EventID:        uuid.NewString(),
 		EventType:      entity.EventTypeDelete,
 		EventTimestamp: time.Now(),
-		AnswerKey:      req.AnswerKey,
+		MapID:          answerMap.MapID,
 		AnswerValue:    nullString,
 	}
 
@@ -189,16 +234,16 @@ func (s *answerService) Get(ctx context.Context, req *model.GetRequest) (*model.
 		return nil, ErrBadRequest
 	}
 
-	answerMap, err := entity.AnswerMaps(entity.AnswerMapWhere.AnswerKey.EQ(req.AnswerKey), entity.AnswerMapWhere.AnswerValue.IsNotNull()).One(ctx, s.db)
+	answerMap, err := entity.AnswerMaps(entity.AnswerMapWhere.UserID.EQ(req.UserID), entity.AnswerMapWhere.AnswerKey.EQ(req.AnswerKey), entity.AnswerMapWhere.AnswerValue.IsNotNull()).One(ctx, s.db)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrResourceNotFound
 		}
 
 		return nil, err
 	}
 
-	return &model.AnswerMap{AnswerKey: answerMap.AnswerKey, AnswerValue: answerMap.AnswerValue.String}, nil
+	return &model.AnswerMap{UserID: answerMap.UserID, AnswerKey: answerMap.AnswerKey, AnswerValue: answerMap.AnswerValue.String}, nil
 }
 
 func (s *answerService) GetHistory(ctx context.Context, req *model.GetHistoryRequest) (*model.GetHistoryResponse, error) {

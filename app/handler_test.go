@@ -26,20 +26,24 @@ import (
 )
 
 const (
-	answerMapString1        string = `{"answerKey":"name","answerValue":"lewis"}`
-	answerKeyQueryString1   string = `?answerKey=name`
+	userID                  string = "217a2106-df0b-4be5-8ab6-7afbd9c948c4"
+	answerUserString1       string = `{"userID":"217a2106-df0b-4be5-8ab6-7afbd9c948c4"}`
+	answerMapString1        string = `{"userID":"217a2106-df0b-4be5-8ab6-7afbd9c948c4","answerKey":"name","answerValue":"lewis"}`
+	answerKeyQueryString1   string = `?userID=217a2106-df0b-4be5-8ab6-7afbd9c948c4&answerKey=name`
 	answerEventQueryString1 string = `?minimumEventTimestamp=2022-05-28T00:00:00Z&pageSize=2`
 )
 
 var (
-	answerMap1             = &model.AnswerMap{AnswerKey: "name", AnswerValue: "lewis"}
-	answerMapKey1          = &model.AnswerMapKey{AnswerKey: "name"}
+	answerUser1            = &model.AnswerUser{UserID: userID}
+	answerMap1             = &model.AnswerMap{UserID: userID, AnswerKey: "name", AnswerValue: "lewis"}
+	answerMapKey1          = &model.AnswerMapKey{UserID: userID, AnswerKey: "name"}
 	uuid1                  = uuid.NewString()
+	uuid2                  = uuid.NewString()
 	time1                  = time.Date(2022, 5, 28, 0, 0, 0, 0, time.UTC)
 	getHistoryRequest1     = &model.GetHistoryRequest{MinimumEventTimestamp: time1, PageSize: 2}
-	answerEvent1           = &model.AnswerEvent{EventID: uuid1, EventType: entity.EventTypeCreate, EventTimestamp: time1, AnswerKey: "name", AnswerValue: null.StringFrom("lewis")}
+	answerEvent1           = &model.AnswerEvent{EventID: uuid1, EventType: entity.EventTypeCreate, EventTimestamp: time1, MapID: uuid2, AnswerValue: null.StringFrom("lewis")}
 	answerEventList1       = &[]model.AnswerEvent{*answerEvent1}
-	answerEventListString1 = fmt.Sprintf(`[{"eventID":"%s","eventType":"create","eventTimestamp":"%s","answerKey":"name","answerValue":"lewis"}]`, uuid1, time1.Format(time.RFC3339))
+	answerEventListString1 = fmt.Sprintf(`[{"eventID":"%s","eventType":"create","eventTimestamp":"%s","mapID":"%s","answerValue":"lewis"}]`, uuid1, time1.Format(time.RFC3339), uuid2)
 )
 
 func TestApp_handlers(t *testing.T) {
@@ -56,6 +60,51 @@ func TestApp_handlers(t *testing.T) {
 		wantStatus   int
 		wantBody     string
 	}{
+		{
+			name: "create answer user, bad request",
+			args: args{
+				method: http.MethodPost,
+				url:    answerUserPath,
+				body:   strings.NewReader(`{}`),
+			},
+			expectations: func(ctx context.Context, mock *mock_service.MockAnswerService) {
+				mock.EXPECT().CreateUser(ctx, &model.AnswerUser{}).Return(service.ErrBadRequest)
+			},
+			handler: func(app *App, w http.ResponseWriter, req *http.Request) {
+				app.createAnswerUser(w, req)
+			},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name: "create answer user, conflict",
+			args: args{
+				method: http.MethodPost,
+				url:    answerUserPath,
+				body:   strings.NewReader(answerUserString1),
+			},
+			expectations: func(ctx context.Context, mock *mock_service.MockAnswerService) {
+				mock.EXPECT().CreateUser(ctx, answerUser1).Return(service.ErrConflict)
+			},
+			handler: func(app *App, w http.ResponseWriter, req *http.Request) {
+				app.createAnswerUser(w, req)
+			},
+			wantStatus: http.StatusConflict,
+		},
+		{
+			name: "create answer user, ok",
+			args: args{
+				method: http.MethodPost,
+				url:    answerUserPath,
+				body:   strings.NewReader(answerUserString1),
+			},
+			expectations: func(ctx context.Context, mock *mock_service.MockAnswerService) {
+				mock.EXPECT().CreateUser(ctx, answerUser1).Return(nil)
+			},
+			handler: func(app *App, w http.ResponseWriter, req *http.Request) {
+				app.createAnswerUser(w, req)
+			},
+			wantStatus: http.StatusOK,
+		},
 		{
 			name: "create answer map, bad request",
 			args: args{

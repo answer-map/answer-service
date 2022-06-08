@@ -49,6 +49,20 @@ func (mr *MockAnswerServiceMockRecorder) Create(ctx, req interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockAnswerService)(nil).Create), ctx, req)
 }
 
+// CreateUser mocks base method.
+func (m *MockAnswerService) CreateUser(ctx context.Context, req *model.CreateUserRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUser", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockAnswerServiceMockRecorder) CreateUser(ctx, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockAnswerService)(nil).CreateUser), ctx, req)
+}
+
 // Delete mocks base method.
 func (m *MockAnswerService) Delete(ctx context.Context, req *model.DeleteRequest) error {
 	m.ctrl.T.Helper()

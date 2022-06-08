@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// CreateUserRequest represents the params required to perform the create user operation.
+type CreateUserRequest = AnswerUser
+
 // CreateRequest represents the params required to perform the create operation.
 type CreateRequest = AnswerMap
 

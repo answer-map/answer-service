@@ -24,6 +24,8 @@ import (
 
 // AnswerMap is an object representing the database table.
 type AnswerMap struct {
+	MapID       string      `boil:"map_id" json:"map_id" toml:"map_id" yaml:"map_id"`
+	UserID      string      `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
 	AnswerKey   string      `boil:"answer_key" json:"answer_key" toml:"answer_key" yaml:"answer_key"`
 	AnswerValue null.String `boil:"answer_value" json:"answer_value,omitempty" toml:"answer_value" yaml:"answer_value,omitempty"`
 
@@ -32,17 +34,25 @@ type AnswerMap struct {
 }
 
 var AnswerMapColumns = struct {
+	MapID       string
+	UserID      string
 	AnswerKey   string
 	AnswerValue string
 }{
+	MapID:       "map_id",
+	UserID:      "user_id",
 	AnswerKey:   "answer_key",
 	AnswerValue: "answer_value",
 }
 
 var AnswerMapTableColumns = struct {
+	MapID       string
+	UserID      string
 	AnswerKey   string
 	AnswerValue string
 }{
+	MapID:       "answer_map.map_id",
+	UserID:      "answer_map.user_id",
 	AnswerKey:   "answer_map.answer_key",
 	AnswerValue: "answer_map.answer_value",
 }
@@ -50,23 +60,30 @@ var AnswerMapTableColumns = struct {
 // Generated where
 
 var AnswerMapWhere = struct {
+	MapID       whereHelperstring
+	UserID      whereHelperstring
 	AnswerKey   whereHelperstring
 	AnswerValue whereHelpernull_String
 }{
+	MapID:       whereHelperstring{field: "\"answer_map\".\"map_id\""},
+	UserID:      whereHelperstring{field: "\"answer_map\".\"user_id\""},
 	AnswerKey:   whereHelperstring{field: "\"answer_map\".\"answer_key\""},
 	AnswerValue: whereHelpernull_String{field: "\"answer_map\".\"answer_value\""},
 }
 
 // AnswerMapRels is where relationship names are stored.
 var AnswerMapRels = struct {
-	AnswerKeyAnswerEvents string
+	User            string
+	MapAnswerEvents string
 }{
-	AnswerKeyAnswerEvents: "AnswerKeyAnswerEvents",
+	User:            "User",
+	MapAnswerEvents: "MapAnswerEvents",
 }
 
 // answerMapR is where relationships are stored.
 type answerMapR struct {
-	AnswerKeyAnswerEvents AnswerEventSlice `boil:"AnswerKeyAnswerEvents" json:"AnswerKeyAnswerEvents" toml:"AnswerKeyAnswerEvents" yaml:"AnswerKeyAnswerEvents"`
+	User            *AnswerUser      `boil:"User" json:"User" toml:"User" yaml:"User"`
+	MapAnswerEvents AnswerEventSlice `boil:"MapAnswerEvents" json:"MapAnswerEvents" toml:"MapAnswerEvents" yaml:"MapAnswerEvents"`
 }
 
 // NewStruct creates a new relationship struct
@@ -78,10 +95,10 @@ func (*answerMapR) NewStruct() *answerMapR {
 type answerMapL struct{}
 
 var (
-	answerMapAllColumns            = []string{"answer_key", "answer_value"}
-	answerMapColumnsWithoutDefault = []string{"answer_key"}
+	answerMapAllColumns            = []string{"map_id", "user_id", "answer_key", "answer_value"}
+	answerMapColumnsWithoutDefault = []string{"map_id", "user_id", "answer_key"}
 	answerMapColumnsWithDefault    = []string{"answer_value"}
-	answerMapPrimaryKeyColumns     = []string{"answer_key"}
+	answerMapPrimaryKeyColumns     = []string{"map_id"}
 	answerMapGeneratedColumns      = []string{}
 )
 
@@ -363,23 +380,34 @@ func (q answerMapQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (
 	return count > 0, nil
 }
 
-// AnswerKeyAnswerEvents retrieves all the answer_event's AnswerEvents with an executor via answer_key column.
-func (o *AnswerMap) AnswerKeyAnswerEvents(mods ...qm.QueryMod) answerEventQuery {
+// User pointed to by the foreign key.
+func (o *AnswerMap) User(mods ...qm.QueryMod) answerUserQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"user_id\" = ?", o.UserID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return AnswerUsers(queryMods...)
+}
+
+// MapAnswerEvents retrieves all the answer_event's AnswerEvents with an executor via map_id column.
+func (o *AnswerMap) MapAnswerEvents(mods ...qm.QueryMod) answerEventQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"answer_event\".\"answer_key\"=?", o.AnswerKey),
+		qm.Where("\"answer_event\".\"map_id\"=?", o.MapID),
 	)
 
 	return AnswerEvents(queryMods...)
 }
 
-// LoadAnswerKeyAnswerEvents allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (answerMapL) LoadAnswerKeyAnswerEvents(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAnswerMap interface{}, mods queries.Applicator) error {
+// LoadUser allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (answerMapL) LoadUser(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAnswerMap interface{}, mods queries.Applicator) error {
 	var slice []*AnswerMap
 	var object *AnswerMap
 
@@ -394,7 +422,8 @@ func (answerMapL) LoadAnswerKeyAnswerEvents(ctx context.Context, e boil.ContextE
 		if object.R == nil {
 			object.R = &answerMapR{}
 		}
-		args = append(args, object.AnswerKey)
+		args = append(args, object.UserID)
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -403,12 +432,115 @@ func (answerMapL) LoadAnswerKeyAnswerEvents(ctx context.Context, e boil.ContextE
 			}
 
 			for _, a := range args {
-				if a == obj.AnswerKey {
+				if a == obj.UserID {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.AnswerKey)
+			args = append(args, obj.UserID)
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`answer_user`),
+		qm.WhereIn(`answer_user.user_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load AnswerUser")
+	}
+
+	var resultSlice []*AnswerUser
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice AnswerUser")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for answer_user")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for answer_user")
+	}
+
+	if len(answerMapAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.User = foreign
+		if foreign.R == nil {
+			foreign.R = &answerUserR{}
+		}
+		foreign.R.UserAnswerMaps = append(foreign.R.UserAnswerMaps, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.UserID == foreign.UserID {
+				local.R.User = foreign
+				if foreign.R == nil {
+					foreign.R = &answerUserR{}
+				}
+				foreign.R.UserAnswerMaps = append(foreign.R.UserAnswerMaps, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadMapAnswerEvents allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (answerMapL) LoadMapAnswerEvents(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAnswerMap interface{}, mods queries.Applicator) error {
+	var slice []*AnswerMap
+	var object *AnswerMap
+
+	if singular {
+		object = maybeAnswerMap.(*AnswerMap)
+	} else {
+		slice = *maybeAnswerMap.(*[]*AnswerMap)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &answerMapR{}
+		}
+		args = append(args, object.MapID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &answerMapR{}
+			}
+
+			for _, a := range args {
+				if a == obj.MapID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.MapID)
 		}
 	}
 
@@ -418,7 +550,7 @@ func (answerMapL) LoadAnswerKeyAnswerEvents(ctx context.Context, e boil.ContextE
 
 	query := NewQuery(
 		qm.From(`answer_event`),
-		qm.WhereIn(`answer_event.answer_key in ?`, args...),
+		qm.WhereIn(`answer_event.map_id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -449,24 +581,24 @@ func (answerMapL) LoadAnswerKeyAnswerEvents(ctx context.Context, e boil.ContextE
 		}
 	}
 	if singular {
-		object.R.AnswerKeyAnswerEvents = resultSlice
+		object.R.MapAnswerEvents = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
 				foreign.R = &answerEventR{}
 			}
-			foreign.R.AnswerKeyAnswerMap = object
+			foreign.R.Map = object
 		}
 		return nil
 	}
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.AnswerKey == foreign.AnswerKey {
-				local.R.AnswerKeyAnswerEvents = append(local.R.AnswerKeyAnswerEvents, foreign)
+			if local.MapID == foreign.MapID {
+				local.R.MapAnswerEvents = append(local.R.MapAnswerEvents, foreign)
 				if foreign.R == nil {
 					foreign.R = &answerEventR{}
 				}
-				foreign.R.AnswerKeyAnswerMap = local
+				foreign.R.Map = local
 				break
 			}
 		}
@@ -475,25 +607,72 @@ func (answerMapL) LoadAnswerKeyAnswerEvents(ctx context.Context, e boil.ContextE
 	return nil
 }
 
-// AddAnswerKeyAnswerEvents adds the given related objects to the existing relationships
+// SetUser of the answerMap to the related item.
+// Sets o.R.User to related.
+// Adds o to related.R.UserAnswerMaps.
+func (o *AnswerMap) SetUser(ctx context.Context, exec boil.ContextExecutor, insert bool, related *AnswerUser) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"answer_map\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"user_id"}),
+		strmangle.WhereClause("\"", "\"", 2, answerMapPrimaryKeyColumns),
+	)
+	values := []interface{}{related.UserID, o.MapID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.UserID = related.UserID
+	if o.R == nil {
+		o.R = &answerMapR{
+			User: related,
+		}
+	} else {
+		o.R.User = related
+	}
+
+	if related.R == nil {
+		related.R = &answerUserR{
+			UserAnswerMaps: AnswerMapSlice{o},
+		}
+	} else {
+		related.R.UserAnswerMaps = append(related.R.UserAnswerMaps, o)
+	}
+
+	return nil
+}
+
+// AddMapAnswerEvents adds the given related objects to the existing relationships
 // of the answer_map, optionally inserting them as new records.
-// Appends related to o.R.AnswerKeyAnswerEvents.
-// Sets related.R.AnswerKeyAnswerMap appropriately.
-func (o *AnswerMap) AddAnswerKeyAnswerEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*AnswerEvent) error {
+// Appends related to o.R.MapAnswerEvents.
+// Sets related.R.Map appropriately.
+func (o *AnswerMap) AddMapAnswerEvents(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*AnswerEvent) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.AnswerKey = o.AnswerKey
+			rel.MapID = o.MapID
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
 				"UPDATE \"answer_event\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"answer_key"}),
+				strmangle.SetParamNames("\"", "\"", 1, []string{"map_id"}),
 				strmangle.WhereClause("\"", "\"", 2, answerEventPrimaryKeyColumns),
 			)
-			values := []interface{}{o.AnswerKey, rel.EventID}
+			values := []interface{}{o.MapID, rel.EventID}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -504,25 +683,25 @@ func (o *AnswerMap) AddAnswerKeyAnswerEvents(ctx context.Context, exec boil.Cont
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.AnswerKey = o.AnswerKey
+			rel.MapID = o.MapID
 		}
 	}
 
 	if o.R == nil {
 		o.R = &answerMapR{
-			AnswerKeyAnswerEvents: related,
+			MapAnswerEvents: related,
 		}
 	} else {
-		o.R.AnswerKeyAnswerEvents = append(o.R.AnswerKeyAnswerEvents, related...)
+		o.R.MapAnswerEvents = append(o.R.MapAnswerEvents, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &answerEventR{
-				AnswerKeyAnswerMap: o,
+				Map: o,
 			}
 		} else {
-			rel.R.AnswerKeyAnswerMap = o
+			rel.R.Map = o
 		}
 	}
 	return nil
@@ -541,7 +720,7 @@ func AnswerMaps(mods ...qm.QueryMod) answerMapQuery {
 
 // FindAnswerMap retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindAnswerMap(ctx context.Context, exec boil.ContextExecutor, answerKey string, selectCols ...string) (*AnswerMap, error) {
+func FindAnswerMap(ctx context.Context, exec boil.ContextExecutor, mapID string, selectCols ...string) (*AnswerMap, error) {
 	answerMapObj := &AnswerMap{}
 
 	sel := "*"
@@ -549,10 +728,10 @@ func FindAnswerMap(ctx context.Context, exec boil.ContextExecutor, answerKey str
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"answer_map\" where \"answer_key\"=$1", sel,
+		"select %s from \"answer_map\" where \"map_id\"=$1", sel,
 	)
 
-	q := queries.Raw(query, answerKey)
+	q := queries.Raw(query, mapID)
 
 	err := q.Bind(ctx, exec, answerMapObj)
 	if err != nil {
@@ -904,7 +1083,7 @@ func (o *AnswerMap) Delete(ctx context.Context, exec boil.ContextExecutor) (int6
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), answerMapPrimaryKeyMapping)
-	sql := "DELETE FROM \"answer_map\" WHERE \"answer_key\"=$1"
+	sql := "DELETE FROM \"answer_map\" WHERE \"map_id\"=$1"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1001,7 +1180,7 @@ func (o AnswerMapSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *AnswerMap) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindAnswerMap(ctx, exec, o.AnswerKey)
+	ret, err := FindAnswerMap(ctx, exec, o.MapID)
 	if err != nil {
 		return err
 	}
@@ -1040,16 +1219,16 @@ func (o *AnswerMapSlice) ReloadAll(ctx context.Context, exec boil.ContextExecuto
 }
 
 // AnswerMapExists checks if the AnswerMap row exists.
-func AnswerMapExists(ctx context.Context, exec boil.ContextExecutor, answerKey string) (bool, error) {
+func AnswerMapExists(ctx context.Context, exec boil.ContextExecutor, mapID string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"answer_map\" where \"answer_key\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"answer_map\" where \"map_id\"=$1 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, answerKey)
+		fmt.Fprintln(writer, mapID)
 	}
-	row := exec.QueryRowContext(ctx, sql, answerKey)
+	row := exec.QueryRowContext(ctx, sql, mapID)
 
 	err := row.Scan(&exists)
 	if err != nil {

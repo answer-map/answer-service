@@ -6,13 +6,42 @@
 	},
 	"item": [
 		{
+			"name": "Create answer user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"userID\": \"8c5bd75e-c373-4cf6-b241-dacfd4987007\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/v1/users",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Create answer",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"answerKey\": \"name\",\r\n    \"answerValue\": \"lewis\"\r\n}",
+					"raw": "{\r\n    \"userID\": \"8c5bd75e-c373-4cf6-b241-dacfd4987007\",\r\n    \"answerKey\": \"name\",\r\n    \"answerValue\": \"lewis\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -41,7 +70,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"answerKey\": \"name\",\r\n    \"answerValue\": \"charles\"\r\n}",
+					"raw": "{\r\n    \"userID\": \"8c5bd75e-c373-4cf6-b241-dacfd4987007\",\r\n    \"answerKey\": \"name\",\r\n    \"answerValue\": \"charles\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -69,7 +98,7 @@
 				"method": "DELETE",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/answers?answerKey=name",
+					"raw": "localhost:8080/api/v1/answers?userID=8c5bd75e-c373-4cf6-b241-dacfd4987007&answerKey=name",
 					"host": [
 						"localhost"
 					],
@@ -80,6 +109,10 @@
 						"answers"
 					],
 					"query": [
+						{
+							"key": "userID",
+							"value": "8c5bd75e-c373-4cf6-b241-dacfd4987007"
+						},
 						{
 							"key": "answerKey",
 							"value": "name"
@@ -95,7 +128,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/answers?answerKey=name",
+					"raw": "localhost:8080/api/v1/answers?userID=8c5bd75e-c373-4cf6-b241-dacfd4987007&answerKey=name",
 					"host": [
 						"localhost"
 					],
@@ -106,6 +139,10 @@
 						"answers"
 					],
 					"query": [
+						{
+							"key": "userID",
+							"value": "8c5bd75e-c373-4cf6-b241-dacfd4987007"
+						},
 						{
 							"key": "answerKey",
 							"value": "name"
@@ -121,7 +158,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/api/v1/answerEvents?minimumEventTimestamp=2022-05-29T00:00:00Z&pageSize=10",
+					"raw": "localhost:8080/api/v1/events?minimumEventTimestamp=2022-05-29T00:00:00Z&pageSize=10",
 					"host": [
 						"localhost"
 					],
@@ -129,7 +166,7 @@
 					"path": [
 						"api",
 						"v1",
-						"answerEvents"
+						"events"
 					],
 					"query": [
 						{
